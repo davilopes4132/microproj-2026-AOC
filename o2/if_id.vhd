@@ -5,7 +5,7 @@ entity if_id is
     port (
         clk       : in std_logic;
         rst       : in std_logic;
-        enable    : in std_logic;
+        freeze    : in std_logic;
         instr_in  : in std_logic_vector(31 downto 0);
         pc_in     : in std_logic_vector(31 downto 0);
         valid_in  : in std_logic;
@@ -23,9 +23,11 @@ begin
                 instr_out <= (others => '0');
                 pc_out <= (others => '0');
                 valid_out <= '0';
-            elsif enable = '1' then--com enable, saidas recebem entradas
+            elsif freeze = '1' then--com freeze, nada muda
+                null;
+            else--sem reset e sem freeze, saidas recebem entradas
                 instr_out <= instr_in;
-                pc_out <= pc_in; 
+                pc_out <= pc_in;
                 valid_out <= valid_in;
             end if;
         end if;
