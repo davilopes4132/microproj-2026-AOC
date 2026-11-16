@@ -31,6 +31,8 @@ entity ex_mem is
     zero_out       : out std_logic;
     branch_in      : in  std_logic;
     branch_out     : out std_logic;
+    branch_target_in  : in  std_logic_vector(31 downto 0);
+    branch_target_out : out std_logic_vector(31 downto 0);
     halt_in        : in  std_logic;
     halt_out       : out std_logic
   );
@@ -55,6 +57,7 @@ begin
         pc_out         <= (others => '0');
         zero_out       <= '0';
         branch_out     <= '0';
+        branch_target_out <= (others => '0');
         halt_out       <= '0';
 
       elsif freeze = '1' then
@@ -73,6 +76,7 @@ begin
         pc_out         <= pc_in;
         zero_out       <= zero_in;
         branch_out     <= branch_in;
+        branch_target_out <= branch_target_in;
         halt_out       <= halt_in;
       end if;
     end if;
