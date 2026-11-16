@@ -25,6 +25,14 @@ entity ex_mem is
     mem_read_out   : out std_logic;
     mem_write_in   : in  std_logic;
     mem_write_out  : out std_logic;
+    pc_in          : in  std_logic_vector(31 downto 0);
+    pc_out         : out std_logic_vector(31 downto 0);
+    zero_in        : in  std_logic;
+    zero_out       : out std_logic;
+    branch_in      : in  std_logic;
+    branch_out     : out std_logic;
+    branch_target_in  : in  std_logic_vector(31 downto 0);
+    branch_target_out : out std_logic_vector(31 downto 0);
     halt_in        : in  std_logic;
     halt_out       : out std_logic
   );
@@ -46,13 +54,17 @@ begin
         mem_to_reg_out <= '0';
         mem_read_out   <= '0';
         mem_write_out  <= '0';
+        pc_out         <= (others => '0');
+        zero_out       <= '0';
+        branch_out     <= '0';
+        branch_target_out <= (others => '0');
         halt_out       <= '0';
 
       elsif freeze = '1' then
         null;  -- congelado: as saidas mantem o valor
 
       else
-        
+
         valid_out      <= valid_in;
         alu_result_out <= alu_result_in;
         store_data_out <= store_data_in;
@@ -61,6 +73,10 @@ begin
         mem_to_reg_out <= mem_to_reg_in;
         mem_read_out   <= mem_read_in;
         mem_write_out  <= mem_write_in;
+        pc_out         <= pc_in;
+        zero_out       <= zero_in;
+        branch_out     <= branch_in;
+        branch_target_out <= branch_target_in;
         halt_out       <= halt_in;
       end if;
     end if;

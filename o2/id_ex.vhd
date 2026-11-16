@@ -63,7 +63,7 @@ begin
         branch_out <= '0';
         alu_src_out <= '0';
         halt_out <= '0';
-      
+
 
       elsif freeze = '1' then
         null;  -- congelado: as saidas mantem o valor
@@ -84,7 +84,7 @@ begin
         branch_out    <= branch_in;
         alu_src_out    <= alu_src_in;
         halt_out    <= halt_in;
-        
+
       end if;
     end if;
   end process;

@@ -21,7 +21,8 @@ entity mem_wb is
         write_reg_out  : out std_logic_vector(4 downto 0);
         reg_write_out  : out std_logic;
         mem_to_reg_out : out std_logic;
-        halt_out       : out std_logic
+        halt_out       : out std_logic;
+        freeze         : in std_logic := '0'
     );
 end entity mem_wb;
 
@@ -39,7 +40,7 @@ begin
                 reg_write_out  <= '0';
                 mem_to_reg_out <= '0';
                 halt_out       <= '0';
-            else
+            elsif freeze = '0' then
                 valid_out      <= valid_in;
                 read_data_out  <= read_data_in;
                 alu_result_out <= alu_result_in;

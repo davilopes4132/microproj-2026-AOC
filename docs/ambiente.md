@@ -41,19 +41,17 @@ As organizações O1 e O2 definem a mesma entidade de topo, `cpu_top`, para que 
 
 | Organização | Fontes | Workdir |
 |---|---|---|
-| O1 | `o1/*.vhd` | `build/o1` |
-| O2 | `o2/*.vhd` | `build/o2` |
+| O1 | `o1/*.vhd` | `build/validacao/o1` |
+| O2 | `o2/*.vhd` e componentes compartilhados em `o1/` | `build/validacao/o2` |
 
-Exemplo do enunciado (seção 7):
+Para compilar e executar todos os traços em ambas as organizações, rode na raiz:
 
 ```bash
-ghdl -a --std=08 --workdir=build/o2 o2/*.vhd tb/tb_cpu.vhd
-ghdl -e --std=08 --workdir=build/o2 tb_cpu
-ghdl -r --std=08 --workdir=build/o2 tb_cpu \
-     -gPROG_FILE=tracos/td.hex -gESPERA_ABORTO=true -gTIPO_ESPERADO=1 \
-     --wave=build/o2_td.ghw
-gtkwave build/o2_td.ghw
+bash run_all.sh
+gtkwave build/validacao/o2/td.ghw
 ```
+
+O script salva as métricas em `build/validacao/metricas.csv`.
 
 ## Estrutura do repositório
 
@@ -61,7 +59,7 @@ gtkwave build/o2_td.ghw
 |---|---|
 | `o1/` | VHDL da organização O1 (sem pipeline) |
 | `o2/` | VHDL da organização O2 (pipeline de 5 estágios) |
-| `tb/` | testbench único `tb_cpu.vhd` |
+| `tb/` | testbench compartilhado `tb_cpu.vhd` e testes unitários |
 | `tracos/` | traços: fonte assembly, `.hex` e arquivo esperado |
-| `scripts/` | scripts auxiliares (`run_all`, geração da série S, gráficos) |
+| `scripts/` | scripts auxiliares de verificação do ambiente |
 | `build/` | gerada; não versionada (ver `.gitignore`) |
