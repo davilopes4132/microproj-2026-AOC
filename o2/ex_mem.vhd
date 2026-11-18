@@ -6,46 +6,47 @@ use ieee.numeric_std.all;
 
 entity ex_mem is
   port (
-    clk            : in  std_logic;
-    rst            : in  std_logic;
-    freeze         : in  std_logic;
-    valid_in       : in  std_logic;
-    valid_out      : out std_logic;
-    alu_result_in  : in  std_logic_vector(31 downto 0);
-    alu_result_out : out std_logic_vector(31 downto 0);
-    store_data_in  : in  std_logic_vector(31 downto 0);
-    store_data_out : out std_logic_vector(31 downto 0);
-    dest_in        : in  std_logic_vector(4 downto 0);
-    dest_out       : out std_logic_vector(4 downto 0);
-    reg_write_in   : in  std_logic;
-    reg_write_out  : out std_logic;
-    mem_to_reg_in  : in  std_logic;
-    mem_to_reg_out : out std_logic;
-    mem_read_in    : in  std_logic;
-    mem_read_out   : out std_logic;
-    mem_write_in   : in  std_logic;
-    mem_write_out  : out std_logic;
-    pc_in          : in  std_logic_vector(31 downto 0);
-    pc_out         : out std_logic_vector(31 downto 0);
-    zero_in        : in  std_logic;
-    zero_out       : out std_logic;
-    branch_in      : in  std_logic;
-    branch_out     : out std_logic;
-    branch_target_in  : in  std_logic_vector(31 downto 0);
-    branch_target_out : out std_logic_vector(31 downto 0);
-    halt_in        : in  std_logic;
-    halt_out       : out std_logic
+    clk            : in  std_logic; --Clock
+    rst            : in  std_logic; -- Reset do registrador
+    freeze         : in  std_logic; -- Congela o conteúdo do registrador
+    valid_in       : in  std_logic; -- Recebe a indicação de validade dos dados
+    valid_out      : out std_logic; -- Disponibiliza a indicação de validade dos dados armazenados
+    alu_result_in  : in  std_logic_vector(31 downto 0); -- Recebe o resultado da ULA
+    alu_result_out : out std_logic_vector(31 downto 0); -- Disponibiliza o resultado da ULA
+    store_data_in  : in  std_logic_vector(31 downto 0); -- Recebe o dado que será escrito na memória
+    store_data_out : out std_logic_vector(31 downto 0); -- Disponibiliza o dado para escrita na memória
+    dest_in        : in  std_logic_vector(4 downto 0); -- Recebe o registrador de destino
+    dest_out       : out std_logic_vector(4 downto 0); -- Disponibiliza o registrador de destino
+    reg_write_in   : in  std_logic; -- Recebe o controle de escrita no banco de registradores
+    reg_write_out  : out std_logic; -- Disponibiliza o controle de escrita
+    mem_to_reg_in  : in  std_logic; -- Recebe o controle de seleção do dado para o registrador
+    mem_to_reg_out : out std_logic; -- Disponibiliza o controle de seleção
+    mem_read_in    : in  std_logic; -- Recebe o controle de leitura da memória
+    mem_read_out   : out std_logic; -- Disponibiliza o controle de leitura
+    mem_write_in   : in  std_logic; -- Recebe o controle de escrita na memória
+    mem_write_out  : out std_logic; -- Disponibiliza o controle de escrita
+    pc_in          : in  std_logic_vector(31 downto 0); -- Recebe o endereço da instrução
+    pc_out         : out std_logic_vector(31 downto 0); -- Disponibiliza o endereço da instrução
+    zero_in        : in  std_logic; -- Recebe a indicação de resultado zero da ULA
+    zero_out       : out std_logic; -- Disponibiliza a indicação de resultado zero
+    branch_in      : in  std_logic; -- Recebe a indicação de uma instrução de desvio
+    branch_out     : out std_logic; -- Disponibiliza a indicação de desvio
+    branch_target_in  : in  std_logic_vector(31 downto 0); -- Recebe o endereço de destino do desvio
+    branch_target_out : out std_logic_vector(31 downto 0); -- Disponibiliza o endereço de destino do desvio
+    halt_in        : in  std_logic; -- Recebe a indicação de uma instrução de parada
+    halt_out       : out std_logic -- Disponibiliza a indicação de parada
   );
 end entity ex_mem;
 
+-- Descreve o funcionamento interno do registrador de pipeline.
 architecture comportamento of ex_mem is
 begin
 
+  -- Processo sequencial: atualiza os dados na borda de subida do clock.
   process (clk)
   begin
     if rising_edge(clk) then
-      if rst = '1' then
-        -- reset: tudo zero (uma bolha nao faz nada)
+      if rst = '1' then -- Reseta todas as saídas, inserindo uma bolha no pipeline.
         valid_out      <= '0';
         alu_result_out <= (others => '0');
         store_data_out <= (others => '0');
@@ -64,7 +65,7 @@ begin
         null;  -- congelado: as saidas mantem o valor
 
       else
-        
+        -- Funcionamento normal: transfere as entradas para as saídas.
         valid_out      <= valid_in;
         alu_result_out <= alu_result_in;
         store_data_out <= store_data_in;

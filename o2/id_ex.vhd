@@ -6,49 +6,49 @@ use ieee.numeric_std.all;
 
 entity id_ex is
   port (
-    clk       : in  std_logic;
-    rst       : in  std_logic;
-    freeze    : in  std_logic;
-    valid_in  : in  std_logic;
-    valid_out : out std_logic;
-    pc_in     : in  std_logic_vector(31 downto 0);
-    pc_out    : out std_logic_vector(31 downto 0);
-    rs_val_in : in  std_logic_vector(31 downto 0);
-    rs_val_out: out std_logic_vector(31 downto 0);
-    rt_val_in : in  std_logic_vector(31 downto 0);
-    rt_val_out: out std_logic_vector(31 downto 0);
-    imm_in    : in  std_logic_vector(31 downto 0);
-    imm_out   : out std_logic_vector(31 downto 0);
-    dest_in   : in  std_logic_vector(4 downto 0);
-    dest_out  : out std_logic_vector(4 downto 0);
-    aluop_in  : in  std_logic_vector(1 downto 0);
-    aluop_out : out std_logic_vector(1 downto 0);
-    reg_write_in  : in  std_logic;
-    reg_write_out : out std_logic;
-    mem_to_reg_in : in  std_logic;
-    mem_to_reg_out: out std_logic;
-    mem_read_in   : in  std_logic;
-    mem_read_out  : out std_logic;
-    mem_write_in  : in  std_logic;
-    mem_write_out : out std_logic;
-    branch_in : in std_logic;
-    branch_out: out std_logic;
-    alu_src_in: in std_logic;
-    alu_src_out:  out std_logic;
-    halt_in   : in std_logic;
-    halt_out  : out std_logic
+    clk       : in  std_logic; -- Clock
+    rst       : in  std_logic; -- Reset do registrador
+    freeze    : in  std_logic; -- Congela o conteúdo do registrador
+    valid_in  : in  std_logic; -- Indica se os dados de entrada são válidos
+    valid_out : out std_logic; -- Indica se os dados armazenados são válidos
+    pc_in     : in  std_logic_vector(31 downto 0); -- Endereço da instrução
+    pc_out    : out std_logic_vector(31 downto 0); -- Disponibiliza o endereço da instrução
+    rs_val_in : in  std_logic_vector(31 downto 0); -- Recebe o valor do registrador RS
+    rs_val_out: out std_logic_vector(31 downto 0); -- Disponibiliza o valor do registrador RS
+    rt_val_in : in  std_logic_vector(31 downto 0);  -- Recebe o valor do registrador RT
+    rt_val_out: out std_logic_vector(31 downto 0); -- Disponibiliza o valor do registrador RT
+    imm_in    : in  std_logic_vector(31 downto 0); -- Recebe o valor imediato da instrução
+    imm_out   : out std_logic_vector(31 downto 0); -- Disponibiliza o valor imediato
+    dest_in   : in  std_logic_vector(4 downto 0); -- Recebe o registrador de destino
+    dest_out  : out std_logic_vector(4 downto 0); -- Disponibiliza o registrador de destino
+    aluop_in  : in  std_logic_vector(1 downto 0); -- Recebe o código de controle da ULA
+    aluop_out : out std_logic_vector(1 downto 0); -- Disponibiliza o código de controle da ULA
+    reg_write_in  : in  std_logic; -- Recebe o controle de escrita no banco de registradores
+    reg_write_out : out std_logic; -- Disponibiliza o controle de escrita
+    mem_to_reg_in : in  std_logic; -- Recebe o controle de seleção do dado para o registrador
+    mem_to_reg_out: out std_logic; -- Disponibiliza o controle de seleção
+    mem_read_in   : in  std_logic; -- Recebe o controle de leitura da memória
+    mem_read_out  : out std_logic; -- Disponibiliza o controle de leitura
+    mem_write_in  : in  std_logic; -- Recebe o controle de escrita na memória 
+    mem_write_out : out std_logic; -- Disponibiliza o controle de escrita
+    branch_in : in std_logic; -- Recebe a indicação de uma instrução de desvio
+    branch_out: out std_logic; -- Disponibiliza a indicação de desvio
+    alu_src_in: in std_logic; -- Recebe o controle de seleção da segunda entrada da ULA
+    alu_src_out:  out std_logic; -- Disponibiliza o controle de seleção da ULA
+    halt_in   : in std_logic; -- Recebe a indicação de uma instrução de parada
+    halt_out  : out std_logic -- Disponibiliza a indicação de parada
   );
 
 end entity id_ex;
 
+-- Descreve o funcionamento interno do registrador de pipeline.
 architecture comportamento of id_ex is
 begin
 
   process (clk)
   begin
     if rising_edge(clk) then
-      if rst = '1' then
-        -- reset: tudo zero (uma bolha nao faz nada)
+      if rst = '1' then -- Reseta todas as saídas, inserindo uma bolha no pipeline.
         valid_out <= '0';
         pc_out    <= (others => '0');
         rs_val_out    <= (others => '0');
@@ -64,12 +64,11 @@ begin
         alu_src_out <= '0';
         halt_out <= '0';
       
-
       elsif freeze = '1' then
         null;  -- congelado: as saidas mantem o valor
 
       else
-        -- caso normal: copia as entradas para as saidas
+        -- caso normal: transfere as entradas para as saidas
         valid_out <= valid_in;
         pc_out <= pc_in;
         rs_val_out    <= rs_val_in;
