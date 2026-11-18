@@ -23,6 +23,7 @@ entity tb_cpu is
 end entity;
 
 architecture sim of tb_cpu is
+  type contagem_estagios is array (0 to 4) of natural;
   signal clk          : std_logic := '0';
   signal rst          : std_logic := '1';
   signal fim_sim      : boolean    := false;
@@ -61,6 +62,7 @@ begin
     variable ciclos   : natural := 0;
     variable instrs   : natural := 0;
     variable ocupados : natural := 0;
+    variable ocupados_por_estagio : contagem_estagios := (others => 0);
     variable erros    : natural := 0;
     variable reg_num : integer;
     variable valor    : std_logic_vector(31 downto 0);
@@ -73,14 +75,16 @@ begin
     rst <= '0';
 
     -- 3.2 Execução: amostra na borda de DESCIDA, no meio do ciclo,
-    --      quando as saídas do processador já estão estáveis
+    --      após estabilizar a escrita e a contagem de WB na O2
     loop
        wait until falling_edge(clk);
+       wait for 1 ps;
        ciclos := ciclos + 1;
        instrs := instrs + to_integer(retired);
        for i in 0 to NUM_SLOTS - 1 loop
          if stage_valid(i) = '1' then
            ocupados := ocupados + 1;
+           ocupados_por_estagio(i) := ocupados_por_estagio(i) + 1;
          end if;
        end loop;
        exit when done = '1' or hazard_abort = '1' or ciclos = MAX_CICLOS;
@@ -106,35 +110,44 @@ begin
       assert unsigned(hazard_pc) = to_unsigned(PC_ESPERADO, hazard_pc'length)
          report "PC do conflito diferente do esperado" severity error;
 
-    elsif done = '1' then
+      -- O aborto e seus metadados devem persistir em ciclos seguintes.
+      for i in 1 to 2 loop
+        wait until falling_edge(clk);
+        wait for 1 ps;
+        assert hazard_abort = '1' and done = '0' and
+               to_integer(unsigned(hazard_type)) = TIPO_ESPERADO and
+               unsigned(hazard_pc) = to_unsigned(PC_ESPERADO, hazard_pc'length) and
+               to_integer(hazard_cycle) = ciclos
+          report "Sinais de aborto mudaram após congelar o processador" severity error;
+      end loop;
+    else
+      assert done = '1'
+        report ORG_NOME & ": tempo esgotado em " & integer'image(MAX_CICLOS) &
+               " ciclos" severity failure;
       assert not ESPERA_ABORTO
         report "Conflito esperado não foi detectado" severity error;
-
-      -- 3.4 Verificação automática: compara registradores com o esperado
-      file_open(st, f_esp, ESPERADO_FILE, read_mode);
-      assert st = open_ok
-        report "Não foi possível abrir " & ESPERADO_FILE severity failure;
-      while not endfile(f_esp) loop
-        readline(f_esp, l);
-        next when l'length = 0;       -- ignora linhas vazias
-        next when l(1) = '#';         -- ignora comentários
-        read(l, reg_num);             -- ex.: "9 0000002A"
-        hread(l, valor);
-        dbg_reg_addr <= std_logic_vector(to_unsigned(reg_num, 5));
-        wait for 1 ns;                -- leitura combinacional estabiliza
-        if dbg_reg_data /= valor then
-          erros := erros + 1;
-          report "Reg " & integer'image(reg_num) & ": esperado 0x" &
-                 to_hstring(valor) & ", obtido 0x" & to_hstring(dbg_reg_data)
-            severity error;
-        end if;
-      end loop;
-      file_close(f_esp);
-
-    else
-      report ORG_NOME & ": tempo esgotado em " & integer'image(MAX_CICLOS) &
-             " ciclos" severity failure;
     end if;
+
+    -- 3.4 Compara os registradores após o término normal ou o aborto.
+    file_open(st, f_esp, ESPERADO_FILE, read_mode);
+    assert st = open_ok
+      report "Não foi possível abrir " & ESPERADO_FILE severity failure;
+    while not endfile(f_esp) loop
+      readline(f_esp, l);
+      next when l'length = 0;       -- ignora linhas vazias
+      next when l(1) = '#';         -- ignora comentários
+      read(l, reg_num);             -- ex.: "9 0000002A"
+      hread(l, valor);
+      dbg_reg_addr <= std_logic_vector(to_unsigned(reg_num, 5));
+      wait for 1 ns;                -- leitura combinacional estabiliza
+      if dbg_reg_data /= valor then
+        erros := erros + 1;
+        report "Reg " & integer'image(reg_num) & ": esperado 0x" &
+               to_hstring(valor) & ", obtido 0x" & to_hstring(dbg_reg_data)
+          severity error;
+      end if;
+    end loop;
+    file_close(f_esp);
 
     -- 3.5 Métricas: uma linha por execução em metricas.csv
     --      org;programa;ciclos;instrucoes;CPI;IPC;ocupacao;erros
@@ -150,8 +163,14 @@ begin
               integer'image(instrs) & ";" & real'image(cpi) & ";" &
                 real'image(ipc) & ";" & real'image(ocup) & ";" &
                 integer'image(erros));
-       writeline(f_csv, l);
-       file_close(f_csv);
+    for i in ocupados_por_estagio'range loop
+      write(l, string'(";"));
+      if i < NUM_SLOTS then
+        write(l, real'image(real(ocupados_por_estagio(i)) / real(ciclos)));
+      end if;
+    end loop;
+    writeline(f_csv, l);
+    file_close(f_csv);
 
     -- 3.6 Encerramento
     report ORG_NOME & ": fim da simulação, " & integer'image(ciclos) &

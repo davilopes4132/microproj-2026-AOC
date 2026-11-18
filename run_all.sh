@@ -21,7 +21,7 @@ o1="$saida/o1"
 o2="$saida/o2"
 metricas="$saida/metricas.csv"
 mkdir -p "$o1" "$o2"
-printf 'org;programa;ciclos;instrucoes;CPI;IPC;ocupacao;erros\n' > "$metricas"
+printf 'org;programa;ciclos;instrucoes;CPI;IPC;ocupacao;erros;ocupacao_IF_ou_O1;ocupacao_ID;ocupacao_EX;ocupacao_MEM;ocupacao_WB\n' > "$metricas"
 
 # Ambas as organizações declaram cpu_top e usam bibliotecas separadas.
 bash compilar_o1.sh "$o1"
@@ -59,9 +59,35 @@ for tamanho in 36 5 10 20 50 100 200; do
 done
 
 if ! "$somente_o1"; then
-  simular o2 O2 5 td -gESPERA_ABORTO=true -gTIPO_ESPERADO=1 -gPC_ESPERADO=4
-  simular o2 O2 5 te -gESPERA_ABORTO=true -gTIPO_ESPERADO=2 -gPC_ESPERADO=12 -gMEM_UNIFICADA=true
-  simular o2 O2 5 tc -gESPERA_ABORTO=true -gTIPO_ESPERADO=3 -gPC_ESPERADO=0
+  simular o2 O2 5 td "-gESPERADO_FILE=../../tracos/td_esperado.txt" -gESPERA_ABORTO=true -gTIPO_ESPERADO=1 -gPC_ESPERADO=4
+  simular o2 O2 5 te "-gESPERADO_FILE=../../tracos/te_esperado.txt" -gESPERA_ABORTO=true -gTIPO_ESPERADO=2 -gPC_ESPERADO=12 -gMEM_UNIFICADA=true
+  simular o2 O2 5 tc "-gESPERADO_FILE=../../tracos/tc_esperado.txt" -gESPERA_ABORTO=true -gTIPO_ESPERADO=3 -gPC_ESPERADO=0
 fi
 
-printf 'Métricas em %s e formas de onda em %s.\n' "$metricas" "$saida"
+# Atrasos do exemplo do livro em ps e overhead assumido para o pipeline.
+memoria_ps=200
+alu_ps=200
+banco_ps=100
+registrador_ps=20
+periodo_o1=$((2 * memoria_ps + alu_ps + 2 * banco_ps))
+periodo_o2=$((memoria_ps + registrador_ps))
+periodo_meio_ciclo=$((2 * (banco_ps + registrador_ps)))
+if (( periodo_meio_ciclo > periodo_o2 )); then
+  periodo_o2=$periodo_meio_ciclo
+fi
+
+LC_ALL=C awk -F';' -v o1="$periodo_o1" -v o2="$periodo_o2" '
+  BEGIN {
+    print "programa;periodo_O1_ps;tempo_O1_ps;periodo_O2_ps;tempo_O2_ps;speedup_estimado;limite_modelo;ideal_5_estagios"
+  }
+  NR > 1 && $1 == "O1" {
+    ciclos_o1[$2] = $3
+  }
+  NR > 1 && $1 == "O2" && $2 in ciclos_o1 {
+    tempo_o1 = ciclos_o1[$2] * o1
+    tempo_o2 = $3 * o2
+    printf "%s;%d;%d;%d;%d;%.6f;%.6f;5\n", $2, o1, tempo_o1, o2, tempo_o2, tempo_o1 / tempo_o2, o1 / o2
+  }
+' metricas.csv > tempos_estimados.csv
+
+printf 'Métricas em %s, estimativas em %s/tempos_estimados.csv e formas de onda em %s.\n'  "$metricas" "$saida" "$saida"
