@@ -1,7 +1,11 @@
-#!/bin/bash
-# Compila todos os arquivos VHDL da O1 (VHDL-2008)
-set -e
+#!/usr/bin/env bash
+# Compila a O1 em VHDL-2008, deixando o topo para depois das dependências.
+set -euo pipefail
 cd "$(dirname "$0")"
-mkdir -p build/o1
-ghdl -a --std=08 --workdir=build/o1 o1/*.vhd
+
+workdir="${1:-build/o1}"
+ghdl="${GHDL:-ghdl}"
+mkdir -p "$workdir"
+"$ghdl" -a --std=08 --workdir="$workdir" \
+  o1/{alu,alu_control,control,dmem,imem,pc,regfile,sign_extend,cpu_top}.vhd
 echo "O1 compilada sem erros"
