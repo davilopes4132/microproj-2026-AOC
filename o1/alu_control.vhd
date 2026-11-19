@@ -19,7 +19,7 @@ begin
   process (aluop, funct)
   begin
     case aluop is -- Define a operação da ULA de acordo com o código aluop.
-      when "00" => alu_op <= "000"; -- ADD: seleciona a operação de soma.
+      when "00" => alu_op <= "000"; -- ADD: seleciona a operação de soma. 
       when "01" => alu_op <= "001"; -- SUB: seleciona a operação de subtração.
       when "10" =>  -- Para instruções do tipo R, utiliza funct para identificar a operação.
         case funct is
