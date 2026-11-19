@@ -69,7 +69,7 @@ memoria_ps=200
 alu_ps=200
 banco_ps=100
 registrador_ps=20
-periodo_o1=$((2 * memoria_ps + alu_ps + 2 * banco_ps))
+periodo_o1=$((2 * memoria_ps + alu_ps + 2 * banco_ps + registrador_ps))
 periodo_o2=$((memoria_ps + registrador_ps))
 periodo_meio_ciclo=$((2 * (banco_ps + registrador_ps)))
 if (( periodo_meio_ciclo > periodo_o2 )); then
